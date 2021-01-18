@@ -378,7 +378,7 @@ def task_run(kwargs):
         quit = 0
         psd = t[1]
         kwargs["WORKING_TASK"].append(acc)
-        a = start_firefox('http://mp.iqiyi.com', headless=False)
+        a = start_firefox('http://mp.iqiyi.com', headless=True)
         a.maximize_window()
         login = 0
         cookies = t[3]

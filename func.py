@@ -14,7 +14,7 @@ from selenium.webdriver import ActionChains
 import numpy as np
 from helium import *
 
-from imge_detection import classify_png, search_box
+from imge_detection38 import classify_png, search_box
 
 ACC_Q = Queue(0)  # 账号验证添加
 TASK_Q = Queue(0)

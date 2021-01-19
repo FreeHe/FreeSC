@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import os
 import shutil
 import sys
@@ -17,7 +18,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QHBoxLayout, QVBoxLay
 # ------------------------------ 主窗口 ---------------------------------------------
 from helium import start_firefox
 
-from func import Sql, ACC_Q, TASK_Q, mtd_run, disable, INFO_Q, login_acc, task_run
+from func38 import Sql, ACC_Q, TASK_Q, mtd_run, disable, INFO_Q, login_acc, task_run
 
 DIR = ''
 if getattr(sys, 'frozen', False):
@@ -119,9 +120,11 @@ class Top(QWidget):
         self.iqy.setAlignment(Qt.AlignCenter)
         self.iqy.s.connect(self.select.showPopup)
         self.select.setLineEdit(self.iqy)
-        self.select.addItems(["爱奇艺", "使用反馈 -> <Github/FreeHe>", "微信 : Ms744593      -      QQ : 849095347"])
+        self.select.addItems(["爱奇艺", "使用反馈 -> <Github/FreeHe>", "微信 : Ms744593      -      QQ : 849095347", "更新信息"])
         self.select.setItemData(1, QVariant(0), Qt.UserRole - 1)
         self.select.setItemData(2, QVariant(0), Qt.UserRole - 1)
+        self.select.setItemData(3, QVariant(0), Qt.UserRole - 1)
+        self.select.setItemData(3, Qt.lightGray, Qt.BackgroundColorRole)
         self.select.setItemData(1, Qt.lightGray, Qt.BackgroundColorRole)
         self.select.setItemData(2, Qt.lightGray, Qt.BackgroundColorRole)
         self.select.setFixedSize(350, 30)
@@ -813,9 +816,9 @@ class SC(QWidget):
                         if os.path.exists(v['vpath']):
                             tmp.append(v)
                     EDIT_D[k] = tmp
-            if not EDIT_D:
-                for i in os.listdir("./tmp"):
-                    shutil.rmtree(f"./tmp/{i}")
+                for i in os.listdir(f"{DIR}/tmp"):
+                    if i not in EDIT_D.keys():
+                        shutil.rmtree(f"{DIR}/tmp/{i}")
         except:
             traceback.print_exc()
         self.setFixedSize(980, 560)
@@ -1104,25 +1107,32 @@ def _del():
 
 
 if __name__ == "__main__":
-    sc = "sc"
-    if requests.post('http://121.199.78.122/sc/', {'sc': sc}).text == 'yes':
-        WORKING_TASK = Manager().list()
-        EDIT_D = dict({})  # acc: [vt...]
-        QUIT_L = Manager().list()
-        if not os.path.isdir(f"{DIR}/tmp"):
-            os.mkdir(f"{DIR}/tmp")
-        for i in os.listdir(f"{DIR}"):
-            if i.endswith(".png"):
-                os.remove(f"{DIR}/{i}")
-        try:
-            app = QApplication(sys.argv)
-            SQL = Sql()
-            SQL.add_sql("SELECT * FROM ACC;")
-            sc = SC()
-            sc.Top.close.s.connect(_del)
-            sc.Top.close.s.connect(sc.task_clock.deleteLater)
-            sc.Top.close.s.connect(lambda: sys.exit())
-            sc.show()
-            sys.exit(app.exec_())
-        except:
-            traceback.print_exc()
+    multiprocessing.freeze_support()
+    sc = "SC"
+    enable = False
+    if requests.post('http://121.199.78.122/sc/', {'sc': sc}).text == 'yes':  # 返回json<更新信息
+        enable = True
+    WORKING_TASK = Manager().list()
+    EDIT_D = dict({})  # acc: [vt...]
+    QUIT_L = Manager().list()
+    if not os.path.isdir(f"{DIR}/tmp"):
+        os.mkdir(f"{DIR}/tmp")
+    for i in os.listdir(f"{DIR}"):
+        if i.endswith(".png"):
+            os.remove(f"{DIR}/{i}")
+    try:
+        app = QApplication(sys.argv)
+        SQL = Sql()
+        SQL.add_sql("SELECT * FROM ACC;")
+        sc = SC()
+        sc.Top.close.s.connect(_del)
+        sc.Top.close.s.connect(sc.task_clock.deleteLater)
+        sc.Top.close.s.connect(lambda: sys.exit())
+        sc.show()
+        if not enable:
+            sc.stack.setEnabled(enable)
+            sc.Top.select.setCurrentText("订阅已结束-可继续订阅")
+            sc.Bot.Lq.setText("订阅已结束-可继续订阅")
+        sys.exit(app.exec_())
+    except:
+        traceback.print_exc()

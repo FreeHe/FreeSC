@@ -4,8 +4,11 @@ import sqlite3 as sql3
 import time
 import traceback
 from datetime import datetime
+from hashlib import md5
 from multiprocessing import Queue, Process, RLock
 from threading import Thread
+
+import requests
 import requests as rq
 import win32con
 import win32gui
@@ -81,6 +84,48 @@ def close_info(driver):
 
 def disable(qcls):
     qcls.setEnabled(False)
+
+
+class Chaojiying_Client(object):
+
+    def __init__(self, username, password, soft_id):
+        self.username = username
+        password = password.encode('utf8')
+        self.password = md5(password).hexdigest()
+        self.soft_id = soft_id
+        self.base_params = {
+            'user': self.username,
+            'pass2': self.password,
+            'softid': self.soft_id,
+        }
+        self.headers = {
+            'Connection': 'Keep-Alive',
+            'User-Agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
+        }
+
+    def PostPic(self, im, codetype):
+        """
+        im: 图片字节
+        codetype: 题目类型 参考 http://www.chaojiying.com/price.html
+        """
+        params = {
+            'codetype': codetype,
+        }
+        params.update(self.base_params)
+        files = {'userfile': ('ccc.jpg', im)}
+        r = requests.post('http://upload.chaojiying.net/Upload/Processing.php', data=params, files=files, headers=self.headers)
+        return r.json()
+
+    def ReportError(self, im_id):
+        """
+        im_id:报错题目的图片ID
+        """
+        params = {
+            'id': im_id,
+        }
+        params.update(self.base_params)
+        r = requests.post('http://upload.chaojiying.net/Upload/ReportError.php', data=params, headers=self.headers)
+        return r.json()
 
 
 def mtd_run(kwargs):
@@ -363,8 +408,12 @@ def is_quit(acc, kwargs):
     return 0
 
 
-def task_run(kwargs):
+def task_run(kwargs, s, account):
+    chaojiying = Chaojiying_Client(*account)
+    # im = open('C://Users//84909//Desktop//77.png', 'rb').read()
+    # print(chaojiying.PostPic(im, 9104))
     while t := kwargs["TASK_Q"].get(block=True):
+        print(s.get())
         try:
             a.quit()
         except:
@@ -378,7 +427,7 @@ def task_run(kwargs):
         quit = 0
         psd = t[1]
         kwargs["WORKING_TASK"].append(acc)
-        a = start_firefox('http://mp.iqiyi.com', headless=True)
+        a = start_firefox('http://mp.iqiyi.com', headless=False if s.get() else True)
         a.maximize_window()
         login = 0
         cookies = t[3]
@@ -639,9 +688,9 @@ def task_run(kwargs):
                         {"thread_id": int(kwargs["id"]), "process": f"填写标题 {v['title']}...", "acc": acc})
                     time.sleep(2)
                     scroll_down(400)
-                    if TextField('输入视频描述').exists():
-                        wait_until(TextField('输入视频描述').exists)
-                        write(v['title'], TextField('输入视频描述'))
+                    if TextField('输入视频简介').exists():
+                        wait_until(TextField('输入视频简介').exists)
+                        write(v['title'], TextField('输入视频简介'))
                         # bug 选自分类
                         kwargs["INFO_Q"].put_nowait(
                             {"thread_id": int(kwargs["id"]), "process": f"输入视频描述...", "acc": acc})
@@ -758,10 +807,11 @@ def task_run(kwargs):
                     win32gui.SendMessage(Edit, win32con.WM_SETTEXT, None, os.path.abspath(v['image']))  # 往输入框输入绝对地址
                     win32gui.SendMessage(dialog, win32con.WM_COMMAND, 1, button)  # 按button
                     lock.release()
-                    time.sleep(2)
-                    click(Text('确认'))
+                    wait_until(Text('确定').exists, timeout_secs=30)
+                    click(Text('确定'))
                     wait_until(Text('编辑封面').exists, timeout_secs=30)
                     time.sleep(2)
+                    print('ll')
                     if Text('图片上传失败').exists():
                         kwargs["INFO_Q"].put_nowait(
                             {"thread_id": int(kwargs["id"]), "process": f"图片上传失败...", "acc": acc})
@@ -893,10 +943,9 @@ def task_run(kwargs):
             level = int(float(level.replace(',', '').replace('￥', '') if level else 0))
             found = float(found.replace(',', '')) if (found != '-' and found != '0.00') else 0
             pv_last = int(pv_last) if pv_last != '--' else 0
-
             print(nick, le)
             print(nick, 'level', level, 'found', found, 'pv_last', pv_last, 'found_last', found_last)
-            # 总播放量
+            # 收集用户信息
             x = rq.post('http://121.199.78.122/post_acc_info/',
                         {'level': level, 'record': record, 'le': le, 'uid': uid, 'found': found, 'pv_last': pv_last,
                          'found_last': found_last,

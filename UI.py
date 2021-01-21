@@ -13,12 +13,13 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QTimer, QVariant
 from PyQt5.QtGui import QPixmap, QFont, QCursor
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QHBoxLayout, QVBoxLayout, QComboBox, QLineEdit, \
-    QStackedWidget, QScrollArea, QMainWindow, QFrame, QTextEdit, QFileDialog, QRadioButton
+    QStackedWidget, QScrollArea, QFrame, QTextEdit, QFileDialog, QRadioButton, QDialog
 
 # ------------------------------ 主窗口 ---------------------------------------------
 from helium import start_firefox
+from license import sc
 
-from func38 import Sql, ACC_Q, TASK_Q, mtd_run, disable, INFO_Q, login_acc, task_run
+from func import Sql, ACC_Q, TASK_Q, mtd_run, disable, INFO_Q, login_acc, task_run
 
 DIR = ''
 if getattr(sys, 'frozen', False):
@@ -120,7 +121,7 @@ class Top(QWidget):
         self.iqy.setAlignment(Qt.AlignCenter)
         self.iqy.s.connect(self.select.showPopup)
         self.select.setLineEdit(self.iqy)
-        self.select.addItems(["爱奇艺", "使用反馈 -> <Github/FreeHe>", "微信 : Ms744593      -      QQ : 849095347", "更新信息"])
+        self.select.addItems(["爱奇艺", "使用反馈 -> <FreeHe>", "QQ群 : FreeSC<开启订阅> : 565799264", "更新信息 : 暂无更新"])
         self.select.setItemData(1, QVariant(0), Qt.UserRole - 1)
         self.select.setItemData(2, QVariant(0), Qt.UserRole - 1)
         self.select.setItemData(3, QVariant(0), Qt.UserRole - 1)
@@ -176,12 +177,15 @@ class Bottom(QWidget):
         self.S = QLabel()
         self.S.setProperty("name", "S")
         self.S.setFixedSize(10, 10)
+        self.e = QRadioButton("打开浏览器")
+        self.e.setStyleSheet("color: #fff")
         self.lay.addWidget(self.data)
         self.lay.addStretch()
         self.lay.addWidget(self.Lq)
         self.lay.addSpacing(10)
         self.lay.addWidget(self.S)
         self.lay.addStretch()
+        self.lay.addWidget(self.e)
         self.lay.addSpacing(70)
         self.setLayout(self.lay)
 
@@ -217,7 +221,7 @@ class AvEdit(QWidget):
         self.top.setLayout(self.top_lay)
         self.lay = QVBoxLayout()
         self.lay.addWidget(self.top)
-        self.Edit = QMainWindow()
+        self.Edit = QDialog()
         self.Edit.setFixedSize(935, 400)
         self.scroll = QScrollArea()
         self.scroll.setFixedSize(935, 400)
@@ -237,7 +241,10 @@ class AvEdit(QWidget):
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.centre)
-        self.Edit.setCentralWidget(self.scroll)
+        self.edit_lay = QHBoxLayout()
+        self.edit_lay.setContentsMargins(0, 0, 0, 0)
+        self.edit_lay.addWidget(self.scroll)
+        self.Edit.setLayout(self.edit_lay)
         self.lay.addWidget(self.Edit)
         self.setLayout(self.lay)
 
@@ -522,7 +529,7 @@ class Aaw(QWidget):
         """)
 
 
-class Acc(QMainWindow):
+class Acc(QDialog):
 
     def __init__(self, parent):
         super(Acc, self).__init__()
@@ -550,7 +557,10 @@ class Acc(QMainWindow):
         self.add_acc_wg.b_confirm.s.connect(self.add_ait)
         self.centre.setLayout(self.lay)
         self.scroll.setWidget(self.centre)
-        self.setCentralWidget(self.scroll)
+        self.outlay = QHBoxLayout()
+        self.outlay.setContentsMargins(0, 0, 0, 0)
+        self.outlay.addWidget(self.scroll)
+        self.setLayout(self.outlay)
         self.acc_p1 = Process(target=mtd_run,
                               args=({'WORKING_TASK': WORKING_TASK, 'ACC_Q': ACC_Q, "INFO_Q": INFO_Q, "id": "1"},), )
         self.acc_p1.daemon = True
@@ -807,6 +817,7 @@ class SC(QWidget):
     def __init__(self):
         super(SC, self).__init__()
         global EDIT_D
+        global share
         try:
             with open("./edit_d.json", "r") as f:
                 EDIT_D = json.load(f)
@@ -842,6 +853,7 @@ class SC(QWidget):
         self.task_clock.timeout.connect(self.clock)
         self.task_clock.setInterval(1000)
         self.task_clock.start()
+        self.Bot.e.toggled.connect(self.e_t)
         self.clock_count = 0
         self.setStyleSheet("""
             QWidget[name="vit"] {
@@ -907,7 +919,7 @@ class SC(QWidget):
                 border-radius: 5px;
                 background-color: #cf0;
             }
-            QScrollArea, Acc, QMainWindow, QWidget[name="ct"], QWidget[name="ect"] {
+            QScrollArea, Acc, QDialog, QWidget[name="ct"], QWidget[name="ect"] {
                 background-color: #202020;
                 border: 0px solid #202020;
                 border-color: #202020;
@@ -974,15 +986,21 @@ class SC(QWidget):
         self.task_p1 = Process(target=task_run,
                                args=(
                                    {'WORKING_TASK': WORKING_TASK, 'TASK_Q': TASK_Q, "INFO_Q": INFO_Q, "QUIT_L": QUIT_L,
-                                    "id": "4"},), )
+                                    "id": "4"}, share, account), )
         self.task_p1.daemon = True
         self.task_p1.start()
         self.task_p2 = Process(target=task_run,
                                args=(
                                    {'WORKING_TASK': WORKING_TASK, 'TASK_Q': TASK_Q, "INFO_Q": INFO_Q, "QUIT_L": QUIT_L,
-                                    "id": "5"},), )
+                                    "id": "5"}, share, account), )
         self.task_p2.daemon = True
         self.task_p2.start()
+
+    def e_t(self):
+        if share.get() == 0:
+            share.set(1)
+        else:
+            share.set(0)
 
     def clock(self):
         try:
@@ -1107,9 +1125,11 @@ def _del():
 
 
 if __name__ == "__main__":
+    account = ['freehe', 'lqa1291794850', '911915']
     multiprocessing.freeze_support()
-    sc = "SC"
     enable = False
+    val = 0
+    share = multiprocessing.Manager().Value('i', val)
     if requests.post('http://121.199.78.122/sc/', {'sc': sc}).text == 'yes':  # 返回json<更新信息
         enable = True
     WORKING_TASK = Manager().list()

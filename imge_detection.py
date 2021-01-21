@@ -72,7 +72,4 @@ def search_box(origin_img, search_img):
     ee = time.time()
     print('search_box - ', ee - ss)
     os.remove(search_img)
-    if r.get('http://121.199.78.122/key/').text == 'b1c69c02f822256929e913848491543f':
-        return box
-    else:
-        return 60, 60
+    return box

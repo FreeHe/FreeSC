@@ -1125,7 +1125,7 @@ def _del():
 
 
 if __name__ == "__main__":
-    account = ['freehe', 'lqa1291794850', '911915']
+    account = ['freehe', '789000', '911915']
     multiprocessing.freeze_support()
     enable = False
     val = 0

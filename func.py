@@ -409,9 +409,10 @@ def is_quit(acc, kwargs):
 
 
 def task_run(kwargs, s, account):
-    chaojiying = Chaojiying_Client(*account)
-    # im = open('C://Users//84909//Desktop//77.png', 'rb').read()
-    # print(chaojiying.PostPic(im, 9104))
+    try:
+        chaojiying = Chaojiying_Client(*account)
+    except:
+        pass
     while t := kwargs["TASK_Q"].get(block=True):
         print(s.get())
         try:
